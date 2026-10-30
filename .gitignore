@@ -1,0 +1,19 @@
+# Gradle / Android Studio
+.gradle/
+build/
+/local.properties
+/.idea/
+*.iml
+/captures
+.externalNativeBuild
+.cxx
+.kotlin/
+
+# Build outputs and local test artefacts
+*.apk
+*.aab
+/test-recorded-calls.png
+
+# OS / Python
+.DS_Store
+__pycache__/

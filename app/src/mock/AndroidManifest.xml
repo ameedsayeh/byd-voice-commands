@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Test hook (mock flavor only): run a command by id via adb to exercise the BYD path. -->
+        <receiver
+            android:name=".testhook.RunCommandReceiver"
+            android:exported="true" />
+    </application>
+</manifest>

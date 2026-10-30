@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">BYD Voice Commands</string>
+    <string name="channel_name">Voice assistant</string>
+    <string name="channel_desc">Keeps the offline voice assistant ready</string>
+    <string name="notif_listening">Listening for \"Hi BYD\"</string>
+    <string name="notif_ptt">Listening…</string>
+    <string name="notif_ready">Ready · press the wheel mic button or tap Speak</string>
+    <string name="accessibility_desc">Lets the steering-wheel mic button trigger offline voice control instead of the built-in assistant. Also used for the \"split screen\" command.</string>
+</resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:allowBackup="true"
+        android:label="BYD Mock Service"
+        android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+
+        <activity android:name=".RecorderActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Receives every BYD API call forwarded by the instrumented impl. -->
+        <receiver android:name=".RecordReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="com.offline.bydmock.RECORD" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
