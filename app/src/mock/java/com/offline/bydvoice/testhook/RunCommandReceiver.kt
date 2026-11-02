@@ -14,7 +14,7 @@ import com.offline.bydvoice.service.VoiceService
  * Mock flavor only (never in the car build). Drive the assistant from adb:
  *
  *   # full pipeline from text (NLU → BYD call → spoken reply + overlay)
- *   adb shell am broadcast -n com.offline.bydvoice.mock/com.offline.bydvoice.testhook.RunCommandReceiver --es text "turn on the ac"
+ *   adb shell am broadcast -n com.offline.bydvoice.mock/com.offline.bydvoice.testhook.RunCommandReceiver --es text "'turn on the ac'"
  *   # full pipeline from a 16 kHz mono WAV (recognition → NLU → BYD call → reply)
  *   adb shell am broadcast -n ... --es audio /sdcard/Download/cmd.wav
  *   # same, but through hands-free standby ("Hi BYD …" wake word spotting)

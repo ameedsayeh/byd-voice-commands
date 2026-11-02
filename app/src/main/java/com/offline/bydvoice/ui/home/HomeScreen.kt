@@ -89,6 +89,8 @@ data class HomeModel(
 data class Perms(
     val mic: Boolean, val overlay: Boolean, val notifications: Boolean,
     val systemSettings: Boolean, val battery: Boolean, val accessibility: Boolean,
+    /** Vehicle-API permissions: null when this isn't a BYD head unit. */
+    val car: Boolean?,
 )
 
 class HomeActions(
@@ -100,6 +102,7 @@ class HomeActions(
     val setDriverOnLeft: (Boolean) -> Unit,
     val setTiming: (Timing) -> Unit,
     val fixMic: () -> Unit,
+    val fixCar: () -> Unit,
     val fixOverlay: () -> Unit,
     val fixNotifications: () -> Unit,
     val fixSystemSettings: () -> Unit,
@@ -159,6 +162,7 @@ private fun Header(m: HomeModel) {
         }
         val (label, color) = when {
             !m.perms.mic -> "Mic blocked" to Palette.Warn
+            m.perms.car == false -> "Car controls off" to Palette.Warn
             m.voice.micSilent -> "Mic silent" to Palette.Warn
             !m.voice.modelReady -> "Loading model" to Palette.TextSecondary
             m.handsFree -> "Listening for “Hi BYD”" to Palette.Success
@@ -270,6 +274,7 @@ private fun ControlsCard(m: HomeModel, a: HomeActions) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Permissions", style = MaterialTheme.typography.titleMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    m.perms.car?.let { ActionChip("Car controls", it, a.fixCar) }
                     ActionChip("Microphone", m.perms.mic, a.fixMic)
                     ActionChip("Show over apps", m.perms.overlay, a.fixOverlay)
                     ActionChip("Notifications", m.perms.notifications, a.fixNotifications)

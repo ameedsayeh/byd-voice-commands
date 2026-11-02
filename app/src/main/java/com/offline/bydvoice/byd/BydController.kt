@@ -44,16 +44,23 @@ class BydController(
         val outcome = try {
             run(action)
         } catch (t: Throwable) {
-            // NoClassDefFoundError = not a BYD head unit; anything else = this firmware rejected it.
-            Log.w(tag, "$action failed: ${t.javaClass.simpleName}: ${t.message}")
-            Outcome(false, detail = if (t is LinkageError) "no vehicle API" else t.message)
+            Log.w(tag, "$action failed: ${t.javaClass.simpleName}: ${t.message}", t)
+            Outcome(false, detail = when (t) {
+                // The car refused the call: the vehicle permissions haven't been allowed.
+                is SecurityException -> NEEDS_PERMISSION
+                // The vehicle classes don't exist: not a BYD head unit.
+                is LinkageError -> NEEDS_HEAD_UNIT
+                else -> "${t.javaClass.simpleName}: ${t.message}"
+            })
         }
         Log.i(tag, "$action -> $outcome")
         return outcome
     }
 
-    private fun ok(code: Int?) = Outcome(code == null || code >= 0, detail = "code=$code")
-    private fun ok(vararg codes: Int?) = Outcome(codes.all { it == null || it >= 0 }, detail = "codes=${codes.toList()}")
+    // Like diplus, a call that doesn't throw counts as sent: the return codes aren't documented and
+    // the car acts asynchronously. The code is kept in the log for diagnosis.
+    private fun ok(code: Int?) = Outcome(true, detail = "code=$code")
+    private fun ok(vararg codes: Int?) = Outcome(true, detail = "codes=${codes.toList()}")
 
     private fun run(a: VehicleAction): Outcome = when (a) {
         // ---------------- climate ----------------
@@ -234,5 +241,9 @@ class BydController(
         /** diplus z.d.f4744v falls back to 0 for the AC control source. */
         const val AC_SOURCE = 0
         private const val THANK_YOU_MS = 3_000L
+
+        // Failure reasons the service turns into "<command> needs …" replies.
+        const val NEEDS_PERMISSION = "needs the Car controls permission: open BYD Voice Commands and allow it"
+        const val NEEDS_HEAD_UNIT = "needs a BYD head unit: this device has no vehicle API"
     }
 }

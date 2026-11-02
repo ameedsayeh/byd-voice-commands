@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.offline.bydvoice.platform.CarPermissions
 import com.offline.bydvoice.service.KeyButtonService
 import com.offline.bydvoice.service.TriggerKeys
 import com.offline.bydvoice.service.VoiceService
@@ -40,7 +41,15 @@ class MainActivity : ComponentActivity() {
     /** Bumped on resume / permission results so the screen re-reads permission state. */
     private val refresh = mutableIntStateOf(0)
 
-    private val askPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh.intValue++ }
+    private val askPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        refresh.intValue++
+        CarPermissions.log(this)
+        // Tapped "Car controls" but Android no longer shows the dialog (denied before): open the app's
+        // permission page so they can be switched on there.
+        if (carFromChip && CarPermissions.missing(this).isNotEmpty()) openAppDetails()
+        carFromChip = false
+    }
+    private var carFromChip = false
 
     private val learned = object : BroadcastReceiver() {
         override fun onReceive(c: Context?, i: Intent?) { refresh.intValue++ }
@@ -65,6 +74,10 @@ class MainActivity : ComponentActivity() {
             setDriverOnLeft = settings::setDriverOnLeft,
             setTiming = settings::setTiming,
             fixMic = ::requestCore,
+            fixCar = {
+                val missing = CarPermissions.missing(this)
+                if (missing.isEmpty()) openAppDetails() else { carFromChip = true; askPermissions.launch(missing.toTypedArray()) }
+            },
             fixOverlay = { open(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))) },
             fixNotifications = {
                 if (Build.VERSION.SDK_INT >= 33) askPermissions.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
@@ -93,7 +106,8 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
-        if (!hasMic()) requestCore()
+        if (!hasMic() || CarPermissions.missing(this).isNotEmpty()) requestCore()
+        CarPermissions.log(this)
         SpeechModels.ensure(this)
     }
 
@@ -108,10 +122,12 @@ class MainActivity : ComponentActivity() {
         runCatching { unregisterReceiver(learned) }
     }
 
+    /** Microphone, notifications and the car's vehicle permissions, in one go on first start. */
     private fun requestCore() {
         val wanted = buildList {
             add(Manifest.permission.RECORD_AUDIO)
             if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
+            addAll(CarPermissions.missing(this@MainActivity))
         }
         askPermissions.launch(wanted.toTypedArray())
     }
@@ -125,6 +141,7 @@ class MainActivity : ComponentActivity() {
         systemSettings = Settings.System.canWrite(this),
         battery = getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName),
         accessibility = KeyButtonService.instance != null || accessibilityEnabled(),
+        car = if (CarPermissions.isCar(this)) CarPermissions.missing(this).isEmpty() else null,
     )
 
     private fun accessibilityEnabled(): Boolean {
@@ -135,6 +152,8 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("BatteryLife")
     private fun openBatteryExemption() = open(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
+
+    private fun openAppDetails() = open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
 
     private fun open(intent: Intent) { runCatching { startActivity(intent) } }
 }

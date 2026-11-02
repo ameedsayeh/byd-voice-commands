@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Stand-ins for the head unit's runtime vehicle permissions, so the emulator behaves like a car:
+         calls are refused until the app has been allowed "Car controls". -->
+    <permission android:name="android.permission.BYDAUTO_AC_COMMON" android:protectionLevel="dangerous" android:label="control the air conditioning" />
+    <permission android:name="android.permission.BYDAUTO_BODYWORK_COMMON" android:protectionLevel="dangerous" android:label="control windows, roof and trunk" />
+    <permission android:name="android.permission.BYDAUTO_SETTING_COMMON" android:protectionLevel="dangerous" android:label="control seats and vehicle settings" />
+    <permission android:name="android.permission.BYDAUTO_LIGHT_COMMON" android:protectionLevel="dangerous" android:label="control the lights" />
+    <permission android:name="android.permission.BYDAUTO_ENERGY_COMMON" android:protectionLevel="dangerous" android:label="change driving modes" />
+    <permission android:name="android.permission.BYDAUTO_DOOR_LOCK_COMMON" android:protectionLevel="dangerous" android:label="lock and unlock the doors" />
+    <permission android:name="android.permission.BYDAUTO_INSTRUMENT_COMMON" android:protectionLevel="dangerous" android:label="read the instrument cluster" />
+    <permission android:name="android.permission.BYDAUTO_PANORAMA_COMMON" android:protectionLevel="dangerous" android:label="show the 360° cameras" />
+    <permission android:name="android.permission.BYDAUTO_CHARGING_COMMON" android:protectionLevel="dangerous" android:label="read charging state" />
+
     <application
         android:allowBackup="true"
         android:label="BYD Mock Service"

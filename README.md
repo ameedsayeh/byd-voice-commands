@@ -115,19 +115,39 @@ brightness ("Modify system settings"), light/dark theme (a system permission on 
 
 ## Install on the car
 
-1. Enable developer options and USB/Wi-Fi debugging on the head unit, then:
+You only need this app: it talks to the car's vehicle API directly, so diplus or any other helper
+app isn't required.
+
+1. On the head unit, turn on developer options and ADB (USB or wireless; how depends on the model
+   and firmware). From your computer:
    ```bash
+   adb connect <head-unit-ip>:5555        # wireless ADB only
    adb install -r app-car-release.apk
    ```
-2. Open **BYD Voice Commands** and grant Microphone, Show over other apps, Notifications and
-   Stay running.
-3. Turn on the button service (Accessibility), tap **Learn button** and press the steering-wheel
+2. Open **BYD Voice Commands** and tap **Allow** on every prompt: microphone, notifications and
+   the car's own permission prompts (the vehicle-control permissions, `BYDAUTO_*_COMMON`). Without
+   those the car refuses every command, and the app now says so and shows **Car controls off**.
+3. Under **Permissions**, also allow Show over apps and Stay running.
+4. Turn on the button service (Accessibility), tap **Learn button** and press the steering-wheel
    voice button. The press is consumed, so the built-in assistant stays quiet.
-4. If commands report that the vehicle API isn't available, grant the `BYDAUTO_*` permissions
-   listed in the manifest, for example:
-   ```bash
-   adb shell pm grant com.offline.bydvoice android.permission.BYDAUTO_AC_SET
-   ```
+5. Test with the ▶ button next to any command, then with your voice.
+
+### If commands still don't work
+
+```bash
+adb logcat -s CarPermissions BydController VoiceService
+```
+
+`CarPermissions` lists every vehicle permission, whether the car treats it as a runtime permission
+and whether it's granted; `BydController` logs each call and the exact error. If a prompt was
+dismissed for good, tap **Car controls** under Permissions (it opens the app's permission page), or
+grant them over ADB:
+
+```bash
+for p in $(adb shell dumpsys package com.offline.bydvoice | grep -o 'android.permission.BYDAUTO_[A-Z_]*' | sort -u); do
+  adb shell pm grant com.offline.bydvoice $p 2>/dev/null && echo "granted $p"
+done
+```
 
 ## Build
 
@@ -146,6 +166,8 @@ app storage on first launch.
 
 The **mock** flavor bundles a stand-in for the vehicle API that sends every call to a companion
 **BYD Mock Service** app (`recorder/`), which lists them, and simulates the window and roof motors.
+The recorder also defines the car's `BYDAUTO_*_COMMON` runtime permissions, so the emulator refuses
+commands until they're allowed, like a real head unit. Install the recorder first.
 
 ```bash
 ./gradlew :app:assembleMockDebug :recorder:assembleDebug
@@ -158,7 +180,7 @@ With the app in the foreground, drive it from adb:
 ```bash
 R=com.offline.bydvoice.mock/com.offline.bydvoice.testhook.RunCommandReceiver
 F=/sdcard/Android/data/com.offline.bydvoice.mock/files
-adb shell am broadcast -n $R --es text "open the sunroof halfway"   # text straight to the matcher
+adb shell am broadcast -n $R --es text "'open the sunroof halfway'"   # text straight to the matcher (note the inner quotes)
 adb shell am broadcast -n $R --es audio $F/cmd.wav                  # a 16 kHz mono WAV through the mic pipeline
 adb shell am broadcast -n $R --es audio $F/hi.wav --ez wake true    # the same, through hands-free standby
 adb shell am broadcast -n $R --es id ALL                            # every command once

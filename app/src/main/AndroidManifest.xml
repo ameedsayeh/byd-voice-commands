@@ -20,7 +20,8 @@
     <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.MODIFY_DAY_NIGHT_MODE" tools:ignore="ProtectedPermissions" />
 
-    <!-- BYD DiLink vehicle API (same family diplus requests; granted at install or via ADB on the car) -->
+    <!-- BYD DiLink vehicle API. The *_COMMON ones are runtime permissions on DiLink: the app asks for
+         them with Android's permission dialog on first start (CarPermissions). -->
     <uses-permission android:name="android.permission.BYDAUTO_AC_COMMON" />
     <uses-permission android:name="android.permission.BYDAUTO_AC_GET" />
     <uses-permission android:name="android.permission.BYDAUTO_AC_SET" />
@@ -35,16 +36,19 @@
     <uses-permission android:name="android.permission.BYDAUTO_ENERGY_COMMON" />
     <uses-permission android:name="android.permission.BYDAUTO_ENERGY_GET" />
     <uses-permission android:name="android.permission.BYDAUTO_ENERGY_SET" />
+    <uses-permission android:name="android.permission.BYDAUTO_INSTRUMENT_COMMON" />
     <uses-permission android:name="android.permission.BYDAUTO_INSTRUMENT_GET" />
     <uses-permission android:name="android.permission.BYDAUTO_INSTRUMENT_SET" />
     <uses-permission android:name="android.permission.BYDAUTO_LIGHT_COMMON" />
     <uses-permission android:name="android.permission.BYDAUTO_LIGHT_GET" />
     <uses-permission android:name="android.permission.BYDAUTO_LIGHT_SET" />
+    <uses-permission android:name="android.permission.BYDAUTO_PANORAMA_COMMON" />
     <uses-permission android:name="android.permission.BYDAUTO_PANORAMA_GET" />
     <uses-permission android:name="android.permission.BYDAUTO_PANORAMA_SET" />
     <uses-permission android:name="android.permission.BYDAUTO_REAR_VIEW_MIRROR_GET" />
     <uses-permission android:name="android.permission.BYDAUTO_REAR_VIEW_MIRROR_SET" />
     <uses-permission android:name="android.permission.BYDAUTO_SENSOR_GET" />
+    <uses-permission android:name="android.permission.BYDAUTO_SENSOR_SET" />
     <uses-permission android:name="android.permission.BYDAUTO_SETTING_COMMON" />
     <uses-permission android:name="android.permission.BYDAUTO_SETTING_GET" />
     <uses-permission android:name="android.permission.BYDAUTO_SETTING_SET" />
@@ -52,6 +56,7 @@
     <uses-permission android:name="android.permission.BYDAUTO_SPECIAL_SET" />
     <uses-permission android:name="android.permission.BYDAUTO_WIPER_GET" />
     <uses-permission android:name="android.permission.BYDAUTO_WIPER_SET" />
+    <uses-permission android:name="android.permission.BYDAUTO_CHARGING_COMMON" />
     <uses-permission android:name="android.permission.BYDAUTO_CHARGING_GET" />
     <uses-permission android:name="android.permission.BYDAUTO_CHARGING_SET" />
     <uses-permission android:name="android.permission.BYDAUTO_POWER_GET" />

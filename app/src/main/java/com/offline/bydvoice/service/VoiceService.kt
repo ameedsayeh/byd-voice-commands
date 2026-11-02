@@ -206,7 +206,13 @@ class VoiceService : Service(), SpeechEngine.Listener {
 
         val outcome = controller.execute(match.action)
         val needs = outcome.detail?.takeIf { !outcome.ok && it.startsWith("needs") }
-        val reply = if (needs != null) "${match.spec.title} $needs" else match.spec.reply(match.tagged, outcome)
+        val reply = when {
+            needs != null -> "${match.spec.title} $needs"
+            // Anything else the car rejected: say why on screen (the log has the details).
+            !outcome.ok && outcome.value == null && outcome.detail != null ->
+                "${match.spec.reply(match.tagged, outcome)} (${outcome.detail})"
+            else -> match.spec.reply(match.tagged, outcome)
+        }
         finish(outcome.ok || outcome.value != null, heard, reply, title = match.spec.title)
     }
 
