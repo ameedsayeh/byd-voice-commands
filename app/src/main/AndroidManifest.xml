@@ -7,6 +7,10 @@
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
+    <!-- Hand commands to the BYD voice assistant (it holds the signature vehicle permissions).
+         This one is a normal permission declared by com.byd.autovoice. -->
+    <uses-permission android:name="com.android.permission.BYD_AUTO_MATED_TEST" />
+
     <!-- Offline mic + always-ready service -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -64,6 +68,7 @@
 
     <!-- Package visibility: offline TTS engines, and launchable apps for "open <app>" -->
     <queries>
+        <package android:name="com.byd.autovoice" />
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
@@ -100,9 +105,11 @@
             android:launchMode="singleInstance"
             android:theme="@style/Theme.BydVoice.ScreenOff" />
 
+        <!-- exported so the steering-wheel button (via Di+ / any launcher shell) can start a listen:
+             am start-foreground-service -n com.offline.bydvoice/.service.VoiceService -a com.offline.bydvoice.action.TRIGGER_LISTEN -->
         <service
             android:name=".service.VoiceService"
-            android:exported="false"
+            android:exported="true"
             android:foregroundServiceType="microphone" />
 
         <!-- Steering-wheel mic button (+ split-screen global action). Enabled by the user in Accessibility. -->
@@ -118,6 +125,15 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_keys" />
         </service>
+
+        <!-- Wheel button via a broadcast: am broadcast -a com.offline.bydvoice.action.START_LISTEN -->
+        <receiver
+            android:name=".service.TriggerReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.offline.bydvoice.action.START_LISTEN" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".boot.BootReceiver"

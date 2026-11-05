@@ -20,8 +20,11 @@ import androidx.core.content.ContextCompat
 import com.offline.bydvoice.App
 import com.offline.bydvoice.MainActivity
 import com.offline.bydvoice.R
+import com.offline.bydvoice.byd.AssistantPhrases
+import com.offline.bydvoice.byd.BydAssistant
 import com.offline.bydvoice.byd.BydController
 import com.offline.bydvoice.nlu.IntentMatcher
+import com.offline.bydvoice.command.Outcome
 import com.offline.bydvoice.nlu.Tagger
 import com.offline.bydvoice.platform.AndroidPlatform
 import com.offline.bydvoice.platform.InstalledApps
@@ -53,6 +56,7 @@ class VoiceService : Service(), SpeechEngine.Listener {
     private lateinit var speaker: Speaker
     private lateinit var overlay: VoiceOverlay
     private lateinit var controller: BydController
+    private lateinit var assistant: BydAssistant
     private lateinit var matcher: IntentMatcher
     private var tone: ToneGenerator? = null
     private var fgStarted = false
@@ -68,6 +72,7 @@ class VoiceService : Service(), SpeechEngine.Listener {
         speaker = Speaker(this)
         overlay = VoiceOverlay(this).apply { setOnTap { cancel() } }
         controller = BydController(this, AndroidPlatform(this)) { settings.driverOnLeft.value }
+        assistant = BydAssistant(this)
         matcher = IntentMatcher(apps = InstalledApps(this))
         tone = runCatching { ToneGenerator(AudioManager.STREAM_SYSTEM, 70) }.getOrNull()
         VoiceBus.update { it.copy(serviceRunning = true) }
@@ -204,16 +209,29 @@ class VoiceService : Service(), SpeechEngine.Listener {
         Log.i(tag, "heard '$heard' -> ${match?.spec?.id} (${match?.confidence?.let { "%.2f".format(it) }}) ${match?.tagged}")
         if (match == null) { finish(false, heard, "Sorry, I didn't catch that"); return }
 
-        val outcome = controller.execute(match.action)
-        val needs = outcome.detail?.takeIf { !outcome.ok && it.startsWith("needs") }
-        val reply = when {
-            needs != null -> "${match.spec.title} $needs"
-            // Anything else the car rejected: say why on screen (the log has the details).
-            !outcome.ok && outcome.value == null && outcome.detail != null ->
-                "${match.spec.reply(match.tagged, outcome)} (${outcome.detail})"
-            else -> match.spec.reply(match.tagged, outcome)
+        // On a DiLink head unit the vehicle API is locked to platform apps, so we hand the command
+        // to the BYD voice assistant (which has the permissions). Anything without an assistant
+        // phrase (apps, camera, screen) still goes through our own path.
+        val phrase = if (settings.useAssistant.value) AssistantPhrases.phraseFor(match.action) else null
+        val reply: String
+        val ok: Boolean
+        if (phrase != null && assistant.isAvailable()) {
+            assistant.run(phrase)
+            Log.i(tag, "via assistant: '$heard' -> ${match.spec.id} phrase='$phrase'")
+            reply = match.spec.reply(match.tagged, Outcome(true))
+            ok = true
+        } else {
+            val outcome = controller.execute(match.action)
+            val needs = outcome.detail?.takeIf { !outcome.ok && it.startsWith("needs") }
+            reply = when {
+                needs != null -> "${match.spec.title} $needs"
+                !outcome.ok && outcome.value == null && outcome.detail != null ->
+                    "${match.spec.reply(match.tagged, outcome)} (${outcome.detail})"
+                else -> match.spec.reply(match.tagged, outcome)
+            }
+            ok = outcome.ok || outcome.value != null
         }
-        finish(outcome.ok || outcome.value != null, heard, reply, title = match.spec.title)
+        finish(ok, heard, reply, title = match.spec.title)
     }
 
     private fun finish(ok: Boolean, heard: String, reply: String, title: String? = null, speak: Boolean = true) {

@@ -119,43 +119,43 @@ class VoiceOverlay(private val context: Context) {
         val pill = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), dp(12), dp(22), dp(12))
+            setPadding(dp(10), dp(8), dp(16), dp(8))
             background = GradientDrawable().apply {
-                cornerRadius = dp(40).toFloat()
+                cornerRadius = dp(30).toFloat()
                 setColor(Color.parseColor("#FF101318"))
                 setStroke(dp(1), Color.parseColor("#22FFFFFF"))
             }
-            elevation = dp(18).toFloat()
+            elevation = dp(14).toFloat()
             outlineProvider = object : ViewOutlineProvider() {
-                override fun getOutline(view: View, outline: Outline) = outline.setRoundRect(0, 0, view.width, view.height, dp(40).toFloat())
+                override fun getOutline(view: View, outline: Outline) = outline.setRoundRect(0, 0, view.width, view.height, dp(30).toFloat())
             }
             setOnClickListener { onTap?.invoke() }
         }
         orb = OrbView(context)
-        pill.addView(orb, LinearLayout.LayoutParams(dp(76), dp(76)))
+        pill.addView(orb, LinearLayout.LayoutParams(dp(50), dp(50)))
 
-        val texts = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), 0, dp(16), 0) }
+        val texts = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, dp(12), 0) }
         status = TextView(context).apply {
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f); letterSpacing = 0.14f
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f); letterSpacing = 0.12f
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
         }
         transcript = TextView(context).apply {
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 19f); setTextColor(Color.parseColor("#F3F5F7"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15.5f); setTextColor(Color.parseColor("#F3F5F7"))
             maxLines = 2; ellipsize = TextUtils.TruncateAt.START
             typeface = Typeface.create("sans-serif", Typeface.NORMAL)
         }
         reply = TextView(context).apply {
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f); setTextColor(Color.parseColor("#AEB6C2"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f); setTextColor(Color.parseColor("#AEB6C2"))
             maxLines = 1; ellipsize = TextUtils.TruncateAt.END
         }
         texts.addView(status); texts.addView(transcript); texts.addView(reply)
         pill.addView(texts, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
 
         wave = WaveView(context)
-        pill.addView(wave, LinearLayout.LayoutParams(dp(150), dp(54)))
+        pill.addView(wave, LinearLayout.LayoutParams(dp(108), dp(40)))
 
-        val frameRoot = FrameLayout(context).apply { setPadding(dp(16), dp(16), dp(16), dp(24)) }
-        val width = min(context.resources.displayMetrics.widthPixels - dp(48), dp(720))
+        val frameRoot = FrameLayout(context).apply { setPadding(dp(16), dp(8), dp(16), dp(20)) }
+        val width = min(context.resources.displayMetrics.widthPixels - dp(48), dp(520))
         frameRoot.addView(pill, FrameLayout.LayoutParams(width, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         val lp = WindowManager.LayoutParams(
@@ -166,7 +166,8 @@ class VoiceOverlay(private val context: Context) {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            y = dp(12)
+            // Sit just below the head unit's top status bar instead of under it.
+            y = statusBarHeight() + dp(6)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 flags = flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
                 blurBehindRadius = dp(24)
@@ -189,6 +190,11 @@ class VoiceOverlay(private val context: Context) {
     }
 
     private fun dp(v: Int) = (v * context.resources.displayMetrics.density).toInt()
+
+    private fun statusBarHeight(): Int {
+        val id = context.resources.getIdentifier("status_bar_height", "dimen", "android")
+        return if (id > 0) context.resources.getDimensionPixelSize(id) else dp(28)
+    }
 
     companion object {
         val ACCENT = Color.parseColor("#E5484D")

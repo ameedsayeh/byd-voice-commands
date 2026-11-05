@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Normal permission declared by com.byd.autovoice; needed to send its arm broadcast. -->
+    <uses-permission android:name="com.android.permission.BYD_AUTO_MATED_TEST" />
+
+    <!-- Package visibility so we can bind the assistant's service on Android 11+. -->
+    <queries>
+        <package android:name="com.byd.autovoice" />
+    </queries>
+
+    <application android:label="BYD Bridge" android:allowBackup="false">
+        <!-- Fired from adb; see BridgeActivity for the am start command. -->
+        <activity
+            android:name=".BridgeActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+    </application>
+</manifest>

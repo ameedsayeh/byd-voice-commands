@@ -40,6 +40,10 @@ class AppSettings private constructor(context: Context) {
     private val _driverOnLeft = MutableStateFlow(prefs.getBoolean(K_LHD, true))
     val driverOnLeft: StateFlow<Boolean> = _driverOnLeft.asStateFlow()
 
+    /** Route commands through the BYD voice assistant (needed on stock, unrooted head units). */
+    private val _useAssistant = MutableStateFlow(prefs.getBoolean(K_ASSISTANT, true))
+    val useAssistant: StateFlow<Boolean> = _useAssistant.asStateFlow()
+
     private val _timing = MutableStateFlow(Timing().let { d ->
         Timing(
             silenceMs = prefs.getLong(K_SILENCE, d.silenceMs),
@@ -64,6 +68,7 @@ class AppSettings private constructor(context: Context) {
     fun setHandsFree(on: Boolean) { _handsFree.value = on; prefs.edit().putBoolean(K_HANDS_FREE, on).apply() }
     fun setVoiceReplies(on: Boolean) { _voiceReplies.value = on; prefs.edit().putBoolean(K_REPLIES, on).apply() }
     fun setDriverOnLeft(on: Boolean) { _driverOnLeft.value = on; prefs.edit().putBoolean(K_LHD, on).apply() }
+    fun setUseAssistant(on: Boolean) { _useAssistant.value = on; prefs.edit().putBoolean(K_ASSISTANT, on).apply() }
     fun setTiming(t: Timing) {
         _timing.value = t
         prefs.edit().putLong(K_SILENCE, t.silenceMs).putLong(K_NO_SPEECH, t.noSpeechMs).putLong(K_MAX, t.maxUtteranceMs)
@@ -75,6 +80,7 @@ class AppSettings private constructor(context: Context) {
         private const val K_HANDS_FREE = "hands_free"
         private const val K_REPLIES = "voice_replies"
         private const val K_LHD = "driver_on_left"
+        private const val K_ASSISTANT = "use_assistant"
         private const val K_SILENCE = "silence_ms"
         private const val K_NO_SPEECH = "no_speech_ms"
         private const val K_MAX = "max_utterance_ms"
