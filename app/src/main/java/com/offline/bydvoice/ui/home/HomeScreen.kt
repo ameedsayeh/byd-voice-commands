@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Mic
@@ -48,6 +49,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -62,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.offline.bydvoice.R
 import com.offline.bydvoice.command.CommandSpec
+import com.offline.bydvoice.setup.AdbBootstrap
 import com.offline.bydvoice.state.HistoryItem
 import com.offline.bydvoice.state.Sensitivity
 import com.offline.bydvoice.state.Timing
@@ -109,6 +112,7 @@ class HomeActions(
     val fixSystemSettings: () -> Unit,
     val fixBattery: () -> Unit,
     val fixAccessibility: () -> Unit,
+    val setupAdvanced: () -> Unit,
     val learnButton: () -> Unit,
 )
 
@@ -290,6 +294,8 @@ private fun ControlsCard(m: HomeModel, a: HomeActions) {
                 }
             }
 
+            AdvancedControlSection(a.setupAdvanced)
+
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Permissions", style = MaterialTheme.typography.titleMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -303,6 +309,62 @@ private fun ControlsCard(m: HomeModel, a: HomeActions) {
             }
         }
     }
+}
+
+/**
+ * One-tap self-setup: the app connects to the car's own ADB (localhost:5555) and grants itself the
+ * wheel button + background auto-start — the Di+ replacement. Streams [AdbBootstrap.State] so the
+ * user sees progress and any error without leaving the screen.
+ */
+@Composable
+private fun AdvancedControlSection(onSetup: () -> Unit) {
+    val state by AdbBootstrap.state.collectAsState()
+    val running = state is AdbBootstrap.State.Running
+    val done = state is AdbBootstrap.State.Done
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Advanced control — no Di+", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Sets up the wheel button and background auto-start by letting the app talk to the car's " +
+                "own ADB on localhost:5555. You approve it once on the car screen — no third-party tool. " +
+                "Needs USB/ADB debugging enabled on the head unit.",
+            style = MaterialTheme.typography.bodySmall, color = Palette.TextSecondary,
+        )
+        Row(
+            Modifier.clip(RoundedCornerShape(12.dp))
+                .background(if (running) Palette.Surface3 else Palette.AccentSoft)
+                .border(1.dp, if (running) Palette.Stroke else Palette.Accent.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .clickable(enabled = !running, onClick = onSetup)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                if (done) Icons.Rounded.CheckCircle else Icons.Rounded.Bolt,
+                null,
+                tint = if (done) Palette.Success else Palette.Accent,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                when {
+                    running -> "Setting up…"
+                    done -> "Set up again"
+                    else -> "Set up advanced control"
+                },
+                style = MaterialTheme.typography.labelLarge, color = Palette.Text,
+            )
+        }
+        when (val s = state) {
+            is AdbBootstrap.State.Running -> StatusLine(s.step, Palette.Accent)
+            is AdbBootstrap.State.Done -> StatusLine("Done — wheel button and background auto-start are on.", Palette.Success)
+            is AdbBootstrap.State.Failed -> StatusLine(s.reason, Palette.Warn)
+            else -> {}
+        }
+    }
+}
+
+@Composable
+private fun StatusLine(text: String, color: androidx.compose.ui.graphics.Color) {
+    Text(text, style = MaterialTheme.typography.bodySmall, color = color)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

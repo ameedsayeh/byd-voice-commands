@@ -63,21 +63,47 @@ directly (`BydController`, mappings in [docs/BYD_API_MAPPING.md](docs/BYD_API_MA
 this automatically when a command has no assistant phrase (e.g. launching an app). Toggle in
 settings (`Use BYD assistant`).
 
-## The steering‑wheel button
+## The steering‑wheel button & auto‑start (no Di+)
 
-The native assistant **reserves** the wheel voice button, and on these units it isn't delivered as
-a normal Android key event — so no app (ours included) can capture it the usual way. The working
-route, the same one BYD Connect uses, is to let **Di+** (迪加, a button tool with deeper access)
-catch the button and start our listening:
+The native assistant **reserves** the wheel voice button. To own it, the app runs an
+`AccessibilityService` with `canRequestFilterKeyEvents` and consumes the key in `onKeyEvent` — the
+same mechanism Di+ uses — so the press triggers our listener and the native assistant stays quiet.
+That service also **auto‑starts on every boot**, which is what makes the app run in the background
+when the car turns on, with no manual launch.
 
-In Di+ → Button Control, bind the wheel button to run (its `执行SHELL[…]` / run‑shell action):
+Enabling an accessibility service and whitelisting background run normally need `shell`‑level
+access the app can't grant itself. Rather than depend on a third‑party tool (Di+), the app does its
+own **self‑setup** — tap **Set up advanced control** in the app:
+
+```
+Set up advanced control ─▶ embedded ADB client (dadb)
+                            ▼  connect to the car's own adbd
+                    localhost:5555   ── you approve once on the car screen
+                            ▼  run as the shell user
+   pm grant … WRITE_SECURE_SETTINGS
+   settings put secure enabled_accessibility_services …/KeyButtonService   (wheel button + auto-start)
+   settings put secure accessibility_enabled 1
+   dumpsys deviceidle whitelist +com.offline.bydvoice                       (background run)
+```
+
+The RSA key is generated once and kept in the app's private storage, so the car authorises this app
+a single time. This is in [setup/AdbBootstrap.kt](app/src/main/java/com/offline/bydvoice/setup/AdbBootstrap.kt).
+It needs USB/ADB debugging enabled on the head unit, and the `INTERNET` permission — Android guards
+every `socket()`, loopback included, behind it; the app makes no outbound network calls.
+
+> It does **not** unlock the signature vehicle API (that still needs BYD's platform key) — car
+> control keeps routing through `BydAssistant`. Self‑setup only unlocks the wheel button and
+> background auto‑start.
+
+**Di+ fallback.** If you'd rather not grant ADB access, Di+ (迪加) can bind the wheel button to a
+run‑shell action instead:
 
 ```bash
 am start-foreground-service -n com.offline.bydvoice/com.offline.bydvoice.service.VoiceService -a com.offline.bydvoice.action.TRIGGER_LISTEN
 ```
 
-That opens the "Say a command…" overlay; speak, and it runs through the pipeline above. Setting Di+
-on that button also overrides the native assistant so it stops popping up.
+Either way the button opens the "Say a command…" overlay; speak, and it runs through the pipeline
+above.
 
 ## Features
 
@@ -105,11 +131,12 @@ on that button also overrides the native assistant so it stops popping up.
    adb install -r app-car-release.apk
    ```
 2. Open **BYD Voice Commands** and allow Microphone, Notifications, Show over apps, Stay running.
-3. **Wheel button:** install Di+ and bind the button to the trigger command above.
+3. **Wheel button + auto‑start:** tap **Set up advanced control** and approve the one‑time ADB
+   prompt on the head unit (or use the Di+ fallback above).
 4. Test with the ▶ button next to any command, then with your voice.
 
 > This app routes through the car's assistant, so the assistant (`com.byd.autovoice`) must be
-> present (it is, on stock DiLink). Di+ is only needed for the steering‑wheel button.
+> present (it is, on stock DiLink). The wheel button/auto‑start is set up in‑app; Di+ is optional.
 
 ### If a command doesn't act
 
@@ -132,7 +159,7 @@ JDK 17 + Android SDK (platform 34).
 ```
 
 R8‑shrunk, debug‑signed for sideloading. The Moonshine model is bundled in
-`app/src/main/assets/moonshine/tiny-streaming-en/`.
+`app/src/main/assets/moonshine/small-streaming-en/`.
 
 ## Testing without a car
 

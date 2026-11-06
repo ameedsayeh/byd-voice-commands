@@ -71,6 +71,10 @@ dependencies {
     // NLU + command catalog (pure Kotlin, unit-tested on the JVM)
     implementation(project(":voicecore"))
 
+    // Embedded ADB client: the app connects to the car's own adbd on localhost:5555 to grant
+    // itself the wheel-button / background-run privileges (no Di+). See setup/AdbBootstrap.kt.
+    implementation("dev.mobile:dadb:2.0.0")
+
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 

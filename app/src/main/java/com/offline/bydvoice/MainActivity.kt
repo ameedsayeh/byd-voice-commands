@@ -22,10 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.offline.bydvoice.platform.CarPermissions
 import com.offline.bydvoice.service.KeyButtonService
 import com.offline.bydvoice.service.TriggerKeys
 import com.offline.bydvoice.service.VoiceService
+import com.offline.bydvoice.setup.AdbBootstrap
 import com.offline.bydvoice.state.AppSettings
 import com.offline.bydvoice.state.VoiceBus
 import com.offline.bydvoice.ui.home.HomeActions
@@ -83,6 +86,7 @@ class MainActivity : ComponentActivity() {
             fixSystemSettings = { open(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:$packageName"))) },
             fixBattery = { openBatteryExemption() },
             fixAccessibility = { open(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
+            setupAdvanced = { lifecycleScope.launch { AdbBootstrap.run(this@MainActivity); refresh.intValue++ } },
             learnButton = { TriggerKeys.setLearnMode(this, true); refresh.intValue++ },
         )
 

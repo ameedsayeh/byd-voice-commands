@@ -2,9 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Fully offline: drop the network permissions the Moonshine library declares for its
-         optional model downloader (we bundle the models). -->
-    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <!-- Loopback only. INTERNET is required because Android guards every socket() — including
+         localhost — behind it, and the self-setup ADB client talks to the car's own adbd on
+         localhost:5555 (see setup/AdbBootstrap.kt). The app makes no outbound network calls; the
+         Moonshine model downloader stays unused (models are bundled). -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
     <!-- Hand commands to the BYD voice assistant (it holds the signature vehicle permissions).
