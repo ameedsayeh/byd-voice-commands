@@ -111,6 +111,20 @@ object AssistantPhrases {
         is VehicleAction.LaunchApp -> null
     }
 
+    /**
+     * True when the assistant resolves this command on-device (from its local_command_code.xml), so
+     * it finishes in a few hundred ms and we can safely cut its spoken reply. Cloud commands take up
+     * to ~2 s and share the call that shows the window, so we must not interrupt them.
+     */
+    fun isOffline(a: VehicleAction): Boolean = when (a) {
+        VehicleAction.AcOn, VehicleAction.AcOff,
+        is VehicleAction.AcAuto, is VehicleAction.FanSet, is VehicleAction.WindshieldFan,
+        is VehicleAction.CabinVentilation, is VehicleAction.Recirculation,
+        is VehicleAction.SeatHeat, is VehicleAction.SeatVent,
+        is VehicleAction.Roof, is VehicleAction.Sunshade -> true
+        else -> false
+    }
+
     /** Chinese numeral for a fan level 1..7 (the assistant wants "四档", not "4档"). */
     private fun cn(level: Int): String =
         listOf("一", "二", "三", "四", "五", "六", "七").getOrElse((level - 1).coerceIn(0, 6)) { "一" }

@@ -216,7 +216,7 @@ class VoiceService : Service(), SpeechEngine.Listener {
         val reply: String
         val ok: Boolean
         if (phrase != null && assistant.isAvailable()) {
-            assistant.run(phrase)
+            assistant.run(phrase, silence = AssistantPhrases.isOffline(match.action))
             Log.i(tag, "via assistant: '$heard' -> ${match.spec.id} phrase='$phrase'")
             reply = match.spec.reply(match.tagged, Outcome(true))
             ok = true

@@ -60,11 +60,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val actions = HomeActions(
             speak = { if (hasMic()) VoiceService.trigger(this) else requestCore() },
-            tryCommand = { spec ->
-                startForegroundService(Intent(this, VoiceService::class.java)
-                    .setAction(VoiceService.ACTION_TEST_TEXT)
-                    .putExtra(VoiceService.EXTRA_TEXT, spec.examples.first()))
-            },
+            tryCommand = { spec -> testText(spec.examples.first()) },
+            runText = { text -> testText(text) },
             toggleCommands = { ids, on -> settings.setEnabled(ids, on) },
             setHandsFree = { on ->
                 settings.setHandsFree(on)
@@ -154,6 +151,14 @@ class MainActivity : ComponentActivity() {
     private fun openBatteryExemption() = open(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
 
     private fun openAppDetails() = open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+
+    /** Run a command by its text, the same path the recognizer uses (used by Try + the quick grid). */
+    private fun testText(text: String) {
+        if (hasMic()) {
+            startForegroundService(Intent(this, VoiceService::class.java)
+                .setAction(VoiceService.ACTION_TEST_TEXT).putExtra(VoiceService.EXTRA_TEXT, text))
+        } else requestCore()
+    }
 
     private fun open(intent: Intent) { runCatching { startActivity(intent) } }
 }

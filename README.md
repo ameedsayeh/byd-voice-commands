@@ -26,7 +26,7 @@ So instead of calling the car API itself, the app **hands the command to the car
 assistant** (`com.byd.autovoice`), which *is* platform‑signed and holds those permissions:
 
 ```
-wheel button ─▶ mic ─▶ Moonshine Tiny (on-device English speech-to-text)
+wheel button ─▶ mic ─▶ Moonshine Small (on-device English speech-to-text)
                          ▼
                  command matcher  (English → VehicleAction)
                          ▼
@@ -35,8 +35,8 @@ wheel button ─▶ mic ─▶ Moonshine Tiny (on-device English speech-to-text)
                  BydAssistant ──▶ com.byd.autovoice automation service ──▶ car acts
 ```
 
-1. **Speech → text.** [Moonshine](https://github.com/moonshine-ai/moonshine) Tiny streaming (34M
-   params, MIT) runs on the head unit's CPU through ONNX Runtime. Fully offline.
+1. **Speech → text.** [Moonshine](https://github.com/moonshine-ai/moonshine) Small streaming
+   (123M params, MIT) runs on the head unit's CPU through ONNX Runtime. Fully offline.
 2. **Text → command.** A synonym lexicon + number parser + fuzzy matching turns the English into a
    structured `VehicleAction`, tolerating mishearings ("hazzard", "Fanspeed for").
 3. **Command → the assistant.** `AssistantPhrases` maps the action to the exact Chinese phrase the
@@ -52,6 +52,11 @@ cloud:
   ventilation.
 - **Need the car's BYD voice cloud (car online):** windows, trunk, doors, mirrors, lights, ambient
   colour, drive modes, cameras, head‑up display, set‑temperature‑by‑number, warmer/cooler.
+
+For the offline commands the app also dismisses the assistant's pop‑up and silences its spoken
+reply right after (they finish in ~300 ms, so this never interrupts them). Cloud commands are left
+to run uninterrupted; to silence those too, turn off **语音播报 (voice broadcast)** in the car's
+voice‑assistant settings.
 
 **Direct‑API fallback.** On a rooted or platform‑signed unit, the app can also call the vehicle API
 directly (`BydController`, mappings in [docs/BYD_API_MAPPING.md](docs/BYD_API_MAPPING.md)); it uses
@@ -80,12 +85,13 @@ on that button also overrides the native assistant so it stops popping up.
   sun shade & roof, lights, cameras, driving modes and screen, plus "open ‹any installed app›".
 - **Say it your way** — meaning‑based matching, not fixed phrases.
 - **Numbers and values** — temperatures, fan levels, colours, app names.
-- **On‑device English speech** (Moonshine Tiny) with a live transcript overlay and spoken English
-  replies.
+- **On‑device English speech** (Moonshine Small) with a live transcript overlay and spoken
+  English replies.
 - **Push‑to‑talk** via the wheel button, the app, or the notification; optional hands‑free "Hi BYD".
+- **Quick grid** of big one‑tap buttons for the most‑used commands (a tab / a Quick‑vs‑All toggle).
 - **Pick your commands** (enable/disable per command or category) and **tune the listening**
   (end‑of‑speech pause, timeouts, hands‑free window, mic sensitivity).
-- **~57 MB**, speech model included.
+- **~140 MB**, speech model included.
 
 | Command done | Settings |
 |---|---|

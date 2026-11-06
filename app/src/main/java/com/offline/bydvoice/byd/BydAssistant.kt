@@ -30,7 +30,7 @@ class BydAssistant(context: Context) {
 
     @Volatile private var svc: AutomatedExecuteAidlInterface? = null
     @Volatile private var binding = false
-    private val pending = ArrayDeque<String>()
+    private val pending = ArrayDeque<Pair<String, Boolean>>()
 
     private val conn = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
@@ -46,9 +46,11 @@ class BydAssistant(context: Context) {
     fun isAvailable(): Boolean =
         runCatching { app.packageManager.getPackageInfo(ASSISTANT_PKG, 0); true }.getOrDefault(false)
 
-    /** Queue a Chinese command phrase for the assistant to execute. */
-    fun run(phrase: String) = h.post {
-        pending.addLast(phrase)
+    /** Queue a Chinese command phrase for the assistant to execute.
+     *  [silence] fires the assistant's stop action afterwards to dismiss its window and spoken reply
+     *  — only safe for commands that finish on-device; a cloud command would be cancelled. */
+    fun run(phrase: String, silence: Boolean = false) = h.post {
+        pending.addLast(phrase to silence)
         arm()
         if (svc != null) flush() else bind()
     }
@@ -65,10 +67,10 @@ class BydAssistant(context: Context) {
     private fun flush() {
         val s = svc ?: return
         while (pending.isNotEmpty()) {
-            val cmd = pending.removeFirst()
+            val (cmd, silence) = pending.removeFirst()
             runCatching { s.c3(0, cmd) }
-                .onSuccess { Log.i(TAG, "sent '$cmd'"); silence() }
-                .onFailure { Log.e(TAG, "c3 failed for '$cmd'", it); svc = null; pending.addFirst(cmd); bind(); return }
+                .onSuccess { Log.i(TAG, "sent '$cmd' (silence=$silence)"); if (silence) silence() }
+                .onFailure { Log.e(TAG, "c3 failed for '$cmd'", it); svc = null; pending.addFirst(cmd to silence); bind(); return }
         }
     }
 
@@ -77,10 +79,14 @@ class BydAssistant(context: Context) {
         app.sendBroadcast(Intent(ARM_ACTION).setPackage(ASSISTANT_PKG).putExtra("TEST_TASKS", "1"))
     }.onFailure { Log.w(TAG, "arm failed", it) }
 
-    /** Cut the assistant's spoken reply shortly after the command has run. */
-    private fun silence() = h.postDelayed({
-        runCatching { app.sendBroadcast(Intent(STOP_SPEECH)) }
-    }, SILENCE_DELAY_MS)
+    /** Dismiss the assistant window + cut its spoken reply after an on-device command has run.
+     *  Fired twice to catch the reply whichever moment it starts; both delays are past the ~300 ms
+     *  an offline command takes, so execution is never interrupted. */
+    private fun silence() {
+        for (delay in longArrayOf(700, 1400)) {
+            h.postDelayed({ runCatching { app.sendBroadcast(Intent(STOP_SPEECH)) } }, delay)
+        }
+    }
 
     companion object {
         private const val TAG = "BydAssistant"
@@ -88,6 +94,5 @@ class BydAssistant(context: Context) {
         private const val SERVICE = "com.byd.autovoice_common.utils.automated.service.AutomataTestService"
         private const val ARM_ACTION = "com.byd.AUTOMATED_TEST_TASKS"
         private const val STOP_SPEECH = "android.media.AudioRecordControl.STOP_AUTO_VOICE_ACTION"
-        private const val SILENCE_DELAY_MS = 600L
     }
 }

@@ -96,6 +96,7 @@ data class Perms(
 class HomeActions(
     val speak: () -> Unit,
     val tryCommand: (CommandSpec) -> Unit,
+    val runText: (String) -> Unit,
     val toggleCommands: (List<String>, Boolean) -> Unit,
     val setHandsFree: (Boolean) -> Unit,
     val setVoiceReplies: (Boolean) -> Unit,
@@ -126,24 +127,42 @@ fun HomeScreen(m: HomeModel, a: HomeActions) {
                         ControlsCard(m, a)
                         ActivityCard(m.history)
                     }
-                    CommandsPanel(m.disabled, a.toggleCommands, a.tryCommand, Modifier.weight(0.58f).fillMaxHeight())
+                    CommandsPane(m, a, Modifier.weight(0.58f).fillMaxHeight())
                 }
             } else {
                 var tab by rememberSaveable { mutableIntStateOf(0) }
                 Column(Modifier.fillMaxSize()) {
                     TabRow(selectedTabIndex = tab, containerColor = Palette.Bg) {
-                        Tab(tab == 0, { tab = 0 }, text = { Text("Assistant") })
-                        Tab(tab == 1, { tab = 1 }, text = { Text("Commands") })
+                        Tab(tab == 0, { tab = 0 }, text = { Text("Quick") })
+                        Tab(tab == 1, { tab = 1 }, text = { Text("Assistant") })
+                        Tab(tab == 2, { tab = 2 }, text = { Text("Commands") })
                     }
-                    if (tab == 0) Column(
-                        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        Header(m); AssistantCard(m, a); ControlsCard(m, a); ActivityCard(m.history)
-                    } else CommandsPanel(m.disabled, a.toggleCommands, a.tryCommand, Modifier.fillMaxSize().padding(12.dp))
+                    when (tab) {
+                        0 -> QuickGrid(a.runText, Modifier.fillMaxSize().padding(16.dp))
+                        1 -> Column(
+                            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                        ) { Header(m); AssistantCard(m, a); ControlsCard(m, a); ActivityCard(m.history) }
+                        else -> CommandsPanel(m.disabled, a.toggleCommands, a.tryCommand, Modifier.fillMaxSize().padding(12.dp))
+                    }
                 }
             }
         }
+    }
+}
+
+/** Right pane: a Quick grid of big buttons, or the full searchable command list. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CommandsPane(m: HomeModel, a: HomeActions, modifier: Modifier) {
+    var mode by rememberSaveable { mutableIntStateOf(0) }
+    Column(modifier) {
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+            SegmentedButton(mode == 0, { mode = 0 }, SegmentedButtonDefaults.itemShape(0, 2), colors = segColors()) { Text("Quick") }
+            SegmentedButton(mode == 1, { mode = 1 }, SegmentedButtonDefaults.itemShape(1, 2), colors = segColors()) { Text("All commands") }
+        }
+        if (mode == 0) QuickGrid(a.runText, Modifier.weight(1f))
+        else CommandsPanel(m.disabled, a.toggleCommands, a.tryCommand, Modifier.weight(1f))
     }
 }
 
