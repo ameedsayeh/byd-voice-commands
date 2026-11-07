@@ -14,8 +14,9 @@ object TriggerKeys {
     private const val KEY_SET = "codes"
     private const val KEY_LEARN = "learn_mode"
 
-    // KEYCODE_VOICE_ASSIST=231, KEYCODE_HEADSETHOOK=79, BYD wheel customs 291/292/293.
-    private val DEFAULTS = setOf(231, 79, 291, 292, 293)
+    // KEYCODE_VOICE_ASSIST=231, KEYCODE_HEADSETHOOK=79, BYD wheel customs 291/292/293, and 304 —
+    // the mic keycode observed live on a DiLink5.0 wheel (2026-11, confirmed via onKeyEvent).
+    private val DEFAULTS = setOf(231, 79, 291, 292, 293, 304)
 
     fun triggerCodes(context: Context): Set<Int> {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
