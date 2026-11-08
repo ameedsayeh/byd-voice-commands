@@ -160,10 +160,10 @@ class VoiceService : Service(), SpeechEngine.Listener {
     }
 
     override fun onPartial(text: String) {
-        if (mode == Mode.SESSION || mode == Mode.AWAKE) {
-            overlay.transcript(text)
-            VoiceBus.update { it.copy(transcript = text) }
-        }
+        // Intentionally not surfaced. Streaming partials are unreliable on poor cabin-mic audio and
+        // flash obviously-wrong text that reads worse than nothing; the waveform already shows we're
+        // listening, and the recognised words appear once the utterance finalizes (onFinalizing ->
+        // "working on it", then the result). Only the final transcript is ever shown to the user.
     }
 
     override fun onFinalizing(text: String) {
