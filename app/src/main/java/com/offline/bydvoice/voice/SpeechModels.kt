@@ -10,10 +10,10 @@ import com.offline.bydvoice.state.VoiceBus
 import java.io.File
 import java.util.concurrent.Executors
 
-/** Loads the bundled Moonshine Small streaming model once per process. */
+/** Loads the bundled Moonshine Tiny streaming model once per process. */
 object SpeechModels {
     private const val TAG = "SpeechModels"
-    private const val ASSET = "moonshine/small-streaming-en"
+    private const val ASSET = "moonshine/tiny-streaming-en"
 
     @Volatile var stt: Stt? = null
         private set
@@ -27,7 +27,7 @@ object SpeechModels {
         loader.execute {
             if (stt == null) {
                 val started = System.currentTimeMillis()
-                stt = runCatching { MoonshineStt(unpack(app), JNI.MOONSHINE_MODEL_ARCH_SMALL_STREAMING, "Moonshine Small") }
+                stt = runCatching { MoonshineStt(unpack(app), JNI.MOONSHINE_MODEL_ARCH_TINY_STREAMING, "Moonshine Tiny") }
                     .onFailure { Log.e(TAG, "speech model failed to load", it) }
                     .getOrNull()
                 Log.i(TAG, "speech model ready=${stt != null} in ${System.currentTimeMillis() - started} ms")
@@ -49,8 +49,8 @@ object SpeechModels {
                 app.assets.open("$ASSET/$name").use { input -> File(dir, name).outputStream().use { input.copyTo(it) } }
             }
             marker.createNewFile()
-            // Models earlier versions unpacked (Vosk, Moonshine Tiny) are no longer used.
-            File(app.filesDir, "moonshine/tiny-streaming-en").deleteRecursively()
+            // Models earlier versions unpacked (Vosk, Moonshine Small) are no longer used.
+            File(app.filesDir, "moonshine/small-streaming-en").deleteRecursively()
             app.getExternalFilesDir(null)?.let { File(it, "model").deleteRecursively() }
         }
         return dir
