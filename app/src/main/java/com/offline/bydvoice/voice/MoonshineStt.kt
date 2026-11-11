@@ -19,7 +19,13 @@ import java.util.concurrent.RejectedExecutionException
  */
 class MoonshineStt(dir: File, arch: Int, override val name: String) : Stt {
 
-    private val transcriber = Transcriber(listOf(TranscriberOption("vad_threshold", "0.3")))
+    private val transcriber = Transcriber(
+        listOf(
+            TranscriberOption("vad_threshold", "0.3"),
+            // Contextual-biasing strength for the key terms (see setKeyterms + Lexicon.recognizerTerms).
+            TranscriberOption("keyterm_boost", KEYTERM_BOOST),
+        )
+    )
     private val exec = Executors.newSingleThreadExecutor { r -> Thread(r, "moonshine") }
 
     /** Line id -> text for the stream being transcribed. */
@@ -108,5 +114,13 @@ class MoonshineStt(dir: File, arch: Int, override val name: String) : Stt {
     companion object {
         private const val TAG = "MoonshineStt"
         private const val RATE = 16_000
+
+        /**
+         * Contextual-biasing strength applied to the recognizer key terms (Lexicon.recognizerTerms).
+         * Higher favours those domain terms more strongly, but also risks hearing other words AS them,
+         * so keep it modest - the key-term list is deliberately short for the same reason. Validate on
+         * the car before raising it; drop this option to fall back to the library default.
+         */
+        private const val KEYTERM_BOOST = "1.5"
     }
 }
